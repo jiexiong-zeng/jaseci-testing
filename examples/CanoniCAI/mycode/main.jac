@@ -1,3 +1,7 @@
+import {*} with "./tesla_ai.jac";
+import {*} with "./faq.jac";
+
+
 node faq_root;
 node faq_state {
     has question;
