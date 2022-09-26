@@ -43,9 +43,8 @@ class OrmHook(RedisHook):
                 )
                 return None
             class_for_type = self.find_class_and_import(loaded_obj.j_type, core_mod)
-            ret_obj = class_for_type(
-                h=self, m_id=loaded_obj.j_master.urn, auto_save=False
-            )
+            kwargs = {"h": self, "m_id": loaded_obj.j_master.urn, "auto_save": False}
+            ret_obj = class_for_type(**kwargs)
             utils.map_assignment_of_matching_fields(ret_obj, loaded_obj)
             assert uuid.UUID(ret_obj.jid) == loaded_obj.jid
 
@@ -123,7 +122,6 @@ class OrmHook(RedisHook):
     ####################################################
 
     def commit_obj(self, item):
-        self.commit_obj_to_cache(item)
         item_from_db, created = self.objects.get_or_create(jid=item.id)
         utils.map_assignment_of_matching_fields(item_from_db, item)
         item_from_db.jsci_obj = item.jsci_payload()
@@ -135,9 +133,11 @@ class OrmHook(RedisHook):
         item_from_db.value = value
         item_from_db.save()
 
-    def commit(self):
+    def commit(self, skip_cache=False):
         """Write through all saves to store"""
         for i in self.save_obj_list:
+            if not skip_cache:
+                self.commit_obj_to_cache(i)
             self.commit_obj(i)
         self.save_obj_list = set()
 
